@@ -68,13 +68,13 @@ const Index = () => {
       <main className="container py-8 space-y-6">
         <SearchBar onSearch={handleSearch} />
         
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <FilterTags
             selectedFilters={selectedFilters}
             onFilterChange={handleFilterChange}
           />
           
-          <div className="grid gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             {jobs.map((job) => (
               <JobCard key={job.id} {...job} />
             ))}

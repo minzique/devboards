@@ -32,30 +32,30 @@ export const JobCard = ({
   };
 
   return (
-    <div className="bg-card p-6 rounded-lg border border-card-border hover:shadow-md transition-shadow animate-fade-in">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
-            {logo ? (
-              <img src={logo} alt={company} className="w-8 h-8 object-contain" />
-            ) : (
-              <span className="text-lg font-semibold">{company[0]}</span>
-            )}
+    <div className="bg-card h-full p-6 rounded-lg border border-card-border hover:shadow-md transition-shadow animate-fade-in flex flex-col justify-between">
+      <div className="space-y-4">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+              {logo ? (
+                <img src={logo} alt={company} className="w-8 h-8 object-contain" />
+              ) : (
+                <span className="text-lg font-semibold">{company[0]}</span>
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg text-secondary">{title}</h3>
+              <p className="text-muted-foreground">{company}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-lg text-secondary">{title}</h3>
-            <p className="text-muted-foreground">{company}</p>
-          </div>
+          <button
+            onClick={toggleSave}
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Heart className={isSaved ? "fill-primary" : ""} />
+          </button>
         </div>
-        <button
-          onClick={toggleSave}
-          className="text-muted-foreground hover:text-primary transition-colors"
-        >
-          <Heart className={isSaved ? "fill-primary" : ""} />
-        </button>
-      </div>
-      
-      <div className="space-y-3">
+        
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{location}</span>
           <span>•</span>
@@ -67,18 +67,18 @@ export const JobCard = ({
             </>
           )}
         </div>
-        
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{postedAt}</span>
-          <a
-            href={applyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary-hover transition-colors"
-          >
-            Apply
-          </a>
-        </div>
+      </div>
+      
+      <div className="flex items-center justify-between mt-4">
+        <span className="text-sm text-muted-foreground">{postedAt}</span>
+        <a
+          href={applyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary-hover transition-colors"
+        >
+          Apply
+        </a>
       </div>
     </div>
   );
