@@ -1,15 +1,25 @@
 from .base_scraper import BaseScraper
 from src.utils.requests_helper import RequestsHelper
 from src.core.exceptions import ScrapingException
-from src.models.job import Job
+from src.models.job import Job, RemoteType, JobType
 from datetime import datetime
-import json 
+from hashlib import md5
+from src.utils.logger import get_logger
+import json
+
+logger = get_logger(__name__)
+
 
 class CodemiteScraper(BaseScraper):
     BASE_URL = "https://codimitepvt.bamboohr.com/careers/"
     requests_helper = RequestsHelper()
     
-    def scrape_listings(self):
+    def generate_job_hash(self, job_data):
+        job_id = job_data['id']
+        source = "codimite"
+        return md5(f"{job_id}{source}".encode()).hexdigest()
+    
+    def scrape_listings(self) -> list[Job]:
         res = self.requests_helper.get(self.BASE_URL + "list") 
         if not res:
             raise ScrapingException("Failed to fetch job listings")
@@ -25,32 +35,33 @@ class CodemiteScraper(BaseScraper):
             job_details = self.requests_helper.get(self.BASE_URL+ job['id'] + "/detail")    
             if not job_details:
                 raise ScrapingException("Failed to fetch job details")
-            job = json.loads(job_details)['result']
-
+            job_details = json.loads(job_details)['result']
+            job_details['id'] = job['id']
             remote_status = None
-            if job['jobOpening']['locationType'] == "2":
-                remote_status = "hybrid"
-            elif job['jobOpening']['locationType'] == "0":
-                remote_status = "in-office"
-            elif job['jobOpening']['locationType'] == "1":
-                remote_status = "remote"
-
-
+            if job_details['jobOpening']['locationType'] == "2":
+                remote_status = RemoteType.HYBRID
+            elif job_details['jobOpening']['locationType'] == "0":
+                remote_status = RemoteType.ONSITE
+            elif job_details['jobOpening']['locationType'] == "1":
+                remote_status = RemoteType.HYBRID
+            logger.debug(f"Processing job: {job_details['jobOpening']['jobOpeningName']}")
+            job_hash = self.generate_job_hash(job_details)
+            logger.debug(f"Generated hash: {job_hash}")
             processed_job_list.append(
                 Job(
-                    title=job['jobOpening']['jobOpeningName'],
-                    description=job['jobOpening']['description'],
-                    location=f"{job['jobOpening']['location']['city']}, {job['jobOpening']['location']['state']}, {job['jobOpening']['location']['addressCountry']}",
+                    job_hash= job_hash,
+                    title=job_details['jobOpening']['jobOpeningName'],
+                    description=job_details['jobOpening']['description'],
+                    location=f"{job_details['jobOpening']['location']['city']}, {job_details['jobOpening']['location']['state']}, {job_details['jobOpening']['location']['addressCountry']}",
                     company="Codemite",
-                    job_type=job['jobOpening']['employmentStatusLabel'],
-                    remote_status=remote_status,
-                    apply_url=job['jobOpening']['jobOpeningShareUrl'],
-                    date_posted=datetime.fromisoformat(job['jobOpening']['datePosted']),
+                    job_type=job_details['jobOpening']['employmentStatusLabel'],
+                    is_remote=remote_status,
+                    apply_url=job_details['jobOpening']['jobOpeningShareUrl'],
+                    date_posted=datetime.fromisoformat(job_details['jobOpening']['datePosted']),
                     source=self.BASE_URL
                 )
             )
         
-            
         return processed_job_list
 
 if __name__ == "__main__":
