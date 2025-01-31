@@ -1,46 +1,59 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-
-
-class JobType(Enum):
-    FULL_TIME = "full-time"
-    PART_TIME = "part-time"
-    CONTRACT = "contract"
-    INTERNSHIP = "internship"
-    FREELANCE = "freelance"
-
+from typing import Optional, TYPE_CHECKING
+from src.models.schemas import RemoteType, JobType
 
 class Job:
+    """Core domain model used across the application"""
+
     def __init__(
         self,
         title: str,
-        description: str,
         company: str,
         location: str,
-        job_type: str = "full-time",
-        remote_status: str = "in-office",
+        description: str = "",
+        job_type: str = JobType.FULL_TIME,
+        is_remote: RemoteType  = RemoteType.ONSITE,
         salary_min: Optional[float] = None,
         salary_max: Optional[float] = None,
         salary_currency: str = "USD",
         apply_url: str = "",
-        date_posted: datetime = datetime.now(),
+        date_posted: datetime = datetime.utcnow(),
         source: str = "",
-        
+        job_hash: Optional[str] = None
     ):
         self.title = title
         self.description = description
         self.company = company
         self.location = location
         self.job_type = job_type
-        self.is_remote = remote_status
+        self.is_remote = is_remote
         self.salary_min = salary_min
         self.salary_max = salary_max
         self.salary_currency = salary_currency
         self.apply_url = apply_url
         self.date_posted = date_posted
         self.source = source
+        self.job_hash = job_hash
 
+    def to_db_model(self) -> 'JobModel':
+        """Convert domain model to DB model"""
+        from src.models.db.job import JobModel
+        return JobModel(
+            title=self.title,
+            description=self.description,
+            company=self.company,
+            location=self.location,
+            job_type=self.job_type,
+            is_remote=self.is_remote.value,
+            salary_min=self.salary_min,
+            salary_max=self.salary_max,
+            salary_currency=self.salary_currency,
+            apply_url=self.apply_url,
+            date_posted=self.date_posted,
+            source=self.source,
+            job_hash=self.job_hash
+        )
     def __repr__(self):
         return f"Job(title='{self.title}', company='{self.company}', location='{self.location}', type='{self.job_type.value}')"
 
