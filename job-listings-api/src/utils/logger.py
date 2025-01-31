@@ -1,50 +1,57 @@
 import logging
 import os
 from datetime import datetime
-
+from src.core.config import Config
 
 class Logger:
-    def __init__(self, name="job_listings"):
+    LOGS_DIR = "logs"
+
+    def __init__(self, name=None):
+        # If no name is provided, use the calling module's name
+        if name is None:
+            name = __name__
+
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
 
-        # Create logs directory if it doesn't exist
-        logs_dir = "logs"
-        if not os.path.exists(logs_dir):
-            os.makedirs(logs_dir)
+        # Ensure logs directory exists
+        os.makedirs(self.LOGS_DIR, exist_ok=True)
 
-        # File handler for debug logs
+        # File handlers (separate files for debug and info logs)
         debug_handler = logging.FileHandler(
-            f"logs/debug_{datetime.now().strftime('%Y%m%d')}.log"
+            os.path.join(self.LOGS_DIR, f"debug_{datetime.now().strftime('%Y%m%d')}.log")
         )
         debug_handler.setLevel(logging.DEBUG)
 
-        # File handler for info logs
         info_handler = logging.FileHandler(
-            f"logs/info_{datetime.now().strftime('%Y%m%d')}.log"
+            os.path.join(self.LOGS_DIR, f"info_{datetime.now().strftime('%Y%m%d')}.log")
         )
         info_handler.setLevel(logging.INFO)
 
         # Console handler
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
+       
+        if os.environ.get("ENV") == "production" or Config.DEBUG == False:
+            console_handler.setLevel(logging.INFO)
+        else:
+            console_handler.setLevel(logging.DEBUG)
 
-        # Create formatters and add it to the handlers
+        # Formatters
         file_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
-        console_formatter = logging.Formatter(
-            '%(levelname)s: %(message)s'
-        )
+        console_formatter = logging.Formatter("%(levelname)s: %(message)s")
 
+        # Assign formatters
         debug_handler.setFormatter(file_formatter)
         info_handler.setFormatter(file_formatter)
         console_handler.setFormatter(console_formatter)
 
-        # Add handlers to the logger
-        self.logger.addHandler(debug_handler)
-        self.logger.addHandler(info_handler)
-        self.logger.addHandler(console_handler)
+        # Add handlers (prevent duplicate handlers)
+        if not self.logger.hasHandlers():
+            self.logger.addHandler(debug_handler)
+            self.logger.addHandler(info_handler)
+            self.logger.addHandler(console_handler)
 
     def debug(self, message):
         self.logger.debug(message)
@@ -56,9 +63,12 @@ class Logger:
         self.logger.warning(message)
 
     def error(self, message):
-        self.logger.error(message)
+        self.logger.error(message, stack_info=True)
 
     def critical(self, message):
         self.logger.critical(message)
 
-logger = Logger()
+
+# Function to get a logger for a module
+def get_logger(name=None):
+    return Logger(name)

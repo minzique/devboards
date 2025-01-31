@@ -1,7 +1,9 @@
 import requests
 from requests.exceptions import RequestException
 from src.core.exceptions import ScrapingException
-from src.utils.logger import logger
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 class RequestsHelper:
     def __init__(self, user_agent=None):
