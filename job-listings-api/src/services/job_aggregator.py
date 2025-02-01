@@ -1,13 +1,14 @@
 from celery import Celery
 from datetime import datetime
+import traceback
 import argparse
-from src.services.scrapers.codemite_scraper import CodemiteScraper
 from src.core.database import db_session
 from src.models.db.job import save_jobs_to_db, archive_old_jobs
 from src.core.celery_config import celery
 from src.utils.logger import get_logger
+from src.services.scrapers.codemite_scraper import CodemiteScraper
 from src.services.scrapers.wso2_scraper import WSO2Scraper
-
+from src.services.scrapers.rootcode_scraper import RootcodeScraper
 logger = get_logger(__name__)
 
 @celery.task
@@ -18,7 +19,8 @@ def run_aggregator(scraper_names=None):
     """Run aggregator directly for testing"""
     available_scrapers = {
         'wso2': WSO2Scraper,
-        'codemite': CodemiteScraper
+        'codemite': CodemiteScraper,
+        'rootcode': RootcodeScraper
     }
     
     scrapers = []
@@ -39,7 +41,8 @@ def run_aggregator(scraper_names=None):
                 save_jobs_to_db(jobs, db)
                 logger.info(f"Saved {len(jobs)} jobs from {scraper.__class__.__name__}")
             except Exception as e:
-                logger.error(f"Error running {scraper.__class__.__name__}: {e}")       
+                logger.error(f"Error running {scraper.__class__.__name__}: {e}\n"
+                            f"Traceback:\n{''.join(traceback.format_tb(e.__traceback__))}")
         
         # archive old jobs
         try: 

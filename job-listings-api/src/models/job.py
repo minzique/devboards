@@ -45,7 +45,7 @@ class Job:
             company=self.company,
             location=self.location,
             job_type=self.job_type,
-            is_remote=self.is_remote.value,
+            is_remote=self.is_remote,
             salary_min=self.salary_min,
             salary_max=self.salary_max,
             salary_currency=self.salary_currency,
@@ -55,7 +55,7 @@ class Job:
             job_hash=self.job_hash
         )
     def __repr__(self):
-        return f"Job(title='{self.title}', company='{self.company}', location='{self.location}', type='{self.job_type.value}')"
+        return f"Job(title='{self.title}', company='{self.company}', location='{self.location}', type='{self.job_type}')"
 
     def to_dict(self):
         return {

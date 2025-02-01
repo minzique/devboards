@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 class BaseSpider(Spider):
     """Base Spider class with common configuration"""
     custom_settings = {
-        'ROBOTSTXT_OBEY': True,
+        'ROBOTSTXT_OBEY': False,
         'CONCURRENT_REQUESTS': 10,
         'USER_AGENT': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
         # 'DOWNLOAD_DELAY': 1,
@@ -38,8 +38,7 @@ class BaseScrapyScraper(BaseScraper):
     def get_spider_settings(self) -> dict:
         """Override to customize spider settings"""
         return {
-            'LOG_ENABLED': False,
-            # Add other Scrapy settings here
+            'LOG_ENABLED': False
         }
 
     def scrape_listings(self) -> List[Job]:

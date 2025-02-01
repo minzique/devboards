@@ -93,16 +93,31 @@ def archive_old_jobs(jobs: list, db: Session) -> int:
 
     count = 0
     for job in jobs_to_archive:
-        archived_job = ArchiveJobModel()
-        # Copy all attributes from original job
-        for column in JobModel.__table__.columns:
-            setattr(archived_job, column.name, getattr(job, column.name))
-        # Add archive timestamp
-        archived_job.date_archived = datetime.utcnow()
+        # Check if job already exists in archive
+        existing_archived = db.query(ArchiveJobModel).filter(
+            ArchiveJobModel.job_hash == job.job_hash
+        ).first()
         
-        db.add(archived_job)
-        db.delete(job)  
-        count += 1
-    
-    db.commit()
+        if existing_archived:
+            # Job already archived, just delete from main table
+            db.delete(job)
+            continue
+            
+        try:
+            archived_job = ArchiveJobModel()
+            # Copy all attributes from original job 
+            for column in JobModel.__table__.columns:
+                setattr(archived_job, column.name, getattr(job, column.name))
+            archived_job.date_archived = datetime.utcnow()
+            
+            db.add(archived_job)
+            db.delete(job)
+            count += 1
+            db.commit()
+            
+        except Exception as e:
+            logger.error(f"Error archiving job {job.job_hash}: {str(e)}")
+            db.rollback()
+            continue
+
     return count
