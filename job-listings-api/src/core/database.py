@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from src.core.config import Config
 from contextlib import contextmanager
-from src.models.db.job import Base
+from src.models.db.company import Base
 from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
@@ -12,8 +12,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     """Initialize database and create tables"""
-    Base.metadata.drop_all(bind=engine)  # Drop existing tables
-    Base.metadata.create_all(bind=engine)  # Create new tables
+    
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    
+    
     
 def ensure_tables_exist():
     inspector = inspect(engine)

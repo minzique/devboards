@@ -1,11 +1,20 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
+from src.models.db.company import CompanyModel
+from sqlalchemy.orm import Session
 from src.models.job import Job
 from hashlib import md5
 
 class BaseScraper(ABC):
     """Abstract base class for job scrapers"""
     
+    def __init__(self, db: Session):
+        self.db = db
+        
+    def get_company_info(self, company_slug: str) -> CompanyModel:
+        """Get company info from database"""
+        return self.db.query(CompanyModel).filter(CompanyModel.slug == company_slug).first()
+
     @abstractmethod
     def scrape_listings(self) -> List[Job]:
         """Fetch job listings from source

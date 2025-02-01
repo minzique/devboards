@@ -2,6 +2,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
 from src.models.schemas import RemoteType, JobType
+from src.models.db.company import CompanyModel
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 class Job:
     """Core domain model used across the application"""
@@ -13,14 +17,18 @@ class Job:
         location: str,
         description: str = "",
         job_type: str = JobType.FULL_TIME,
-        is_remote: RemoteType  = RemoteType.ONSITE,
+        is_remote: RemoteType = RemoteType.ONSITE,
         salary_min: Optional[float] = None,
         salary_max: Optional[float] = None,
         salary_currency: str = "USD",
         apply_url: str = "",
         date_posted: datetime = datetime.utcnow(),
         source: str = "",
-        job_hash: Optional[str] = None
+        job_hash: Optional[str] = None,
+        company_id: Optional[int] = None,
+        company_logo: Optional[str] = None,
+        company_website: Optional[str] = None,
+        date_fetched: Optional[datetime] = None
     ):
         self.title = title
         self.description = description
@@ -35,14 +43,36 @@ class Job:
         self.date_posted = date_posted
         self.source = source
         self.job_hash = job_hash
+        self.company_id = company_id
+        self.company_logo = company_logo
+        self.company_website = company_website
+        self.date_fetched = date_fetched
 
-    def to_db_model(self) -> 'JobModel':
+    def to_db_model(self, db_session=None) -> 'JobModel':
         """Convert domain model to DB model"""
         from src.models.db.job import JobModel
+        
+        company_id = self.company_id
+        if db_session and not company_id:
+            company = db_session.query(CompanyModel).filter_by(name=self.company).first()
+            if not company:
+                logger.info(f"Creating new company: {self.company}")
+                new_company = CompanyModel(
+                    name=self.company,
+                    website=self.company_website,
+                    logo_url=self.company_logo,
+                    slug=self.company.lower().replace(" ", "-")
+                )
+                db_session.add(new_company)
+                db_session.commit()
+                company_id = new_company.id
+            else:
+                company_id = company.id
+
         return JobModel(
+            job_hash=self.job_hash,
             title=self.title,
             description=self.description,
-            company=self.company,
             location=self.location,
             job_type=self.job_type,
             is_remote=self.is_remote,
@@ -52,8 +82,10 @@ class Job:
             apply_url=self.apply_url,
             date_posted=self.date_posted,
             source=self.source,
-            job_hash=self.job_hash
+            date_fetched=self.date_fetched or datetime.utcnow(),
+            company_id=company_id
         )
+
     def __repr__(self):
         return f"Job(title='{self.title}', company='{self.company}', location='{self.location}', type='{self.job_type}')"
 
@@ -72,7 +104,10 @@ class Job:
             } if self.salary_min or self.salary_max else None,
             "apply_url": self.apply_url,
             "date_posted": self.date_posted.isoformat(),
-            "source": self.source
+            "source": self.source,
+            "company_id": self.company_id,
+            "company_logo": self.company_logo,
+            "company_website": self.company_website
         }
         
     def pretty_print(self):
@@ -86,4 +121,7 @@ class Job:
         Apply: {self.apply_url}
         Date: {self.date_posted}
         Source: {self.source}
-        """ 
+        Company ID: {self.company_id}
+        Company Logo: {self.company_logo}
+        Company Website: {self.company_website}
+        """

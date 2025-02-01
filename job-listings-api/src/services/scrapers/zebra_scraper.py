@@ -31,6 +31,7 @@ class ZebraScraper(BaseScraper):
 
     def process_listings(self, job_data: str) -> list[Job]:
         """Process raw job listings into Job objects"""
+        company = self.get_company_info('zebra')
         json_data = json.loads(job_data)['positions']
         processed_job_list: list[Job] = []
 
@@ -40,7 +41,8 @@ class ZebraScraper(BaseScraper):
                 processed_job_list.append(
                     Job(
                         title=job['name'],
-                        company='Zebra',
+                        company=company.name,
+                        company_id=company.id,
                         description=job['job_description'],
                         location=job['location'],
                         job_type=self._parse_job_type(job.get('work_location_option', 'onsite')),
@@ -48,7 +50,8 @@ class ZebraScraper(BaseScraper):
                         apply_url=job.get('canonicalPositionUrl', ''),
                         date_posted=datetime.fromtimestamp(job['t_create']),
                         source='zebra',
-                        job_hash=self.generate_job_hash(job)
+                        job_hash=self.generate_job_hash(job),
+                        logo_url=company.logo_url
                     )
                 )
             except Exception as e:

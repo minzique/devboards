@@ -1,40 +1,42 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, relationship
 from src.models.job import Job
 from src.models.schemas import RemoteType, JobType
 from src.utils.logger import get_logger
-
+from src.models.db.company import Base, CompanyModel
+import traceback
 logger = get_logger(__name__)
-
-Base = declarative_base()
 
 class JobModel(Base):
     __tablename__ = "jobs"
 
-    id = Column(Integer, index=True)
-    job_hash = Column(String, index=True, primary_key=True)
-    title = Column(String, index=True)
+    id = Column(Integer,index=True)
+    job_hash = Column(String, primary_key=True, nullable=False)
+    title = Column(String, nullable=False)
     description = Column(String)
-    company = Column(String, index=True)
     location = Column(String)
     job_type = Column(String)
-    is_remote = Column(String, default="in-office")
-    salary_min = Column(Float, nullable=True)
-    salary_max = Column(Float, nullable=True)
-    salary_currency = Column(String, default="USD")
+    is_remote = Column(String)
+    salary_min = Column(Float)
+    salary_max = Column(Float)
+    salary_currency = Column(String)
     apply_url = Column(String)
-    date_posted = Column(DateTime, default=datetime.utcnow)
+    date_posted = Column(DateTime)
     source = Column(String)
     date_fetched = Column(DateTime)
+    company_id = Column(Integer, ForeignKey('companies.id'))
     
+    # Relationship
+    company = relationship("CompanyModel", back_populates="jobs")
+
     def to_domain(self) -> Job:
         """Convert DB model to domain model"""
         return Job(
             title=self.title,
             description=self.description,
-            company=self.company,
+            company=self.company.name if self.company else "unknown",
             location=self.location,
             job_type=self.job_type,
             is_remote=self.is_remote,
@@ -43,7 +45,12 @@ class JobModel(Base):
             salary_currency=self.salary_currency,
             apply_url=self.apply_url,
             date_posted=self.date_posted,
-            source=self.source
+            source=self.source,
+            job_hash=self.job_hash,
+            company_id=self.company_id,
+            company_logo=self.company.logo_url if self.company else None,
+            company_website=self.company.website if self.company else None,
+            date_fetched=self.date_fetched
         )
 
 
@@ -54,7 +61,6 @@ class ArchiveJobModel(Base):
     job_hash = Column(String, index=True, primary_key=True)
     title = Column(String, index=True)
     description = Column(String)
-    company = Column(String, index=True)
     location = Column(String)
     job_type = Column(String)
     is_remote = Column(String, default="in-office")
@@ -66,6 +72,8 @@ class ArchiveJobModel(Base):
     source = Column(String)
     date_fetched = Column(DateTime)
     date_archived = Column(DateTime, default=datetime.utcnow)
+    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    company = relationship("CompanyModel", backref="archive_jobs")
 
 
 def save_jobs_to_db(jobs: list[Job], db: Session):
@@ -78,16 +86,31 @@ def save_jobs_to_db(jobs: list[Job], db: Session):
         except Exception as e:
             print(f"Error querying job: {e}")
             continue
-        job_listing = job.to_db_model()
-        db.add(job_listing)
-    db.commit()
+        try:
+            job_listing = job.to_db_model(db_session=db)
+            db.add(job_listing)
+            db.commit()
+        except ValueError as e:
+            logger.error(f"Error saving job {job.title}: {str(e)}")
+            db.rollback()
+            continue
+        except Exception as e:
+            logger.error(f"Unexpected error saving job {job.title}: {str(e)}\n"
+                         f"traceback: {traceback.format_exc()}")
+            db.rollback()
+            continue
+
 
 def archive_old_jobs(jobs: list, db: Session) -> int:
     """Move jobs not in current listings to archive table"""
     current_job_hashes = [job.job_hash for job in jobs]
     
     # Find jobs to archive
+    companies = db.query(JobModel.company_id).filter(JobModel.job_hash.in_(current_job_hashes)).distinct().all()
+    company_ids = [company[0] for company in companies]
+    
     jobs_to_archive = db.query(JobModel).filter(
+        JobModel.company_id.in_(company_ids),
         ~JobModel.job_hash.in_(current_job_hashes)
     ).all()
 
@@ -105,6 +128,7 @@ def archive_old_jobs(jobs: list, db: Session) -> int:
             
         try:
             archived_job = ArchiveJobModel()
+            logger.debug(f"Archiving job: {job.title}")
             # Copy all attributes from original job 
             for column in JobModel.__table__.columns:
                 setattr(archived_job, column.name, getattr(job, column.name))
