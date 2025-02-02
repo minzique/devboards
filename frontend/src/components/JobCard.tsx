@@ -2,6 +2,7 @@ import { Job } from "@/types/job";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { useAppliedJobs } from "@/hooks/useAppliedJobs";
 
 export const JobCard = ({
   job_hash,
@@ -16,12 +17,14 @@ export const JobCard = ({
   is_remote,
   logo
 }: Job) => {
+  const { appliedJobs, toggleApplied } = useAppliedJobs();
+  const isApplied = appliedJobs.has(job_hash);
   const formattedDate = formatDistanceToNow(new Date(date_posted), { addSuffix: true });
   const salary = salary_min && salary_max ? `$${salary_min}K - $${salary_max}K` : null;
 
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-100 hover:border-gray-200 transition-all">
-      <div className="space-y-4">
+    <div className="bg-white rounded-lg p-6 border border-gray-200 hover:border-gray-500 transition-all flex flex-col h-full">
+      <div className="flex flex-col flex-grow">
         <div className="flex justify-between items-start">
           <span className="text-sm text-blue-600">{formattedDate}</span>
           {is_remote && (
@@ -59,22 +62,23 @@ export const JobCard = ({
             <span>⏰ {job_type}</span>
           </div>
         </div>
+      </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => window.open(apply_url, '_blank')}
-          >
-            Details
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-          >
-            Mark Applied
-          </Button>
-        </div>
+      <div className="flex gap-2 pt-4 mt-auto">
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => window.open(apply_url, '_blank')}
+        >
+          Details
+        </Button>
+        <Button
+          variant={isApplied ? "default" : "outline"}
+          className={`w-full ${isApplied ? 'bg-yellow-400 hover:bg-yellow-500' : 'hover:bg-yellow-500 hover:text-white'}`}
+          onClick={() => toggleApplied(job_hash)}
+        >
+          {isApplied ? 'Applied ✓' : 'Mark Applied'}
+        </Button>
       </div>
     </div>
   );
