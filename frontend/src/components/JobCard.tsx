@@ -1,9 +1,7 @@
 import { Job } from "@/types/job";
-import { Heart } from "lucide-react";
-import { describe } from "node:test";
-import { useState } from "react";
-
-
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
 
 export const JobCard = ({
   job_hash,
@@ -13,71 +11,70 @@ export const JobCard = ({
   salary_min,
   salary_max,
   date_posted,
-  description,
   apply_url,
-  source,
   job_type,
+  is_remote,
   logo
 }: Job) => {
-  const [isSaved, setIsSaved] = useState(false);
-
-  const toggleSave = () => {
-    setIsSaved(!isSaved);
-    // TODO: Implement save to local storage
-  };
+  const formattedDate = formatDistanceToNow(new Date(date_posted), { addSuffix: true });
+  const salary = salary_min && salary_max ? `$${salary_min}K - $${salary_max}K` : null;
 
   return (
-    <div className="bg-card h-full p-6 rounded-lg border border-card-border hover:shadow-md transition-shadow animate-fade-in flex flex-col justify-between">
+    <div className="bg-white rounded-lg p-6 border border-gray-100 hover:border-gray-200 transition-all">
       <div className="space-y-4">
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
-              {logo ? (
-                <img
-                  src={logo}
-                  alt={company}
-                  className="w-8 h-8 object-contain"
-                />
-              ) : (
-                <span className="text-lg font-semibold">{company[0]}</span>
-              )}
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg text-secondary">{title}</h3>
-              <p className="text-muted-foreground">{company}</p>
-            </div>
-          </div>
-          <button
-            onClick={toggleSave}
-            className="text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Heart className={isSaved ? "fill-primary" : ""} />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{location}</span>
-          <span>•</span>
-          <span>{job_type}</span>
-          {(salary_max && salary_min) && (
-            <>
-              <span>•</span>
-              <span>{salary_min} - {salary_max}</span>
-            </>
+          <span className="text-sm text-blue-600">{formattedDate}</span>
+          {is_remote && (
+            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+              Remote
+            </Badge>
           )}
         </div>
-      </div>
 
-      <div className="flex items-center justify-between mt-4">
-        <span className="text-sm text-muted-foreground">{date_posted}</span>
-        <a
-          href={apply_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary-hover transition-colors"
-        >
-          Apply
-        </a>
+        <div className="space-y-2">
+          <h3 className="font-semibold text-lg text-gray-900">{title}</h3>
+          
+          <div className="flex items-center gap-2">
+            {logo ? (
+              <img src={logo} alt={company} className="w-5 h-5 rounded" />
+            ) : (
+              <div className="w-5 h-5 bg-gray-100 rounded flex items-center justify-center">
+                <span className="text-xs font-medium">{company[0]}</span>
+              </div>
+            )}
+            <span className="text-sm text-gray-600">{company}</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>📍 {location}</span>
+          </div>
+          {salary && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>💰 {salary}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>⏰ {job_type}</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => window.open(apply_url, '_blank')}
+          >
+            Details
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+          >
+            Mark Applied
+          </Button>
+        </div>
       </div>
     </div>
   );
