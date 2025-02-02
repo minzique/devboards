@@ -1,4 +1,6 @@
 import { Search } from "lucide-react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 interface SearchBarProps {
   onSearch: (query: string, location: string) => void;
@@ -17,28 +19,34 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto">
       <div className="flex gap-4 p-4 bg-white rounded-lg shadow-sm border border-card-border">
         <div className="flex-1">
-          <input
+          <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-1">
+            Position, title, keywords
+          </label>
+          <Input
             type="text"
+            id="query"
             name="query"
-            placeholder="Position, title, keywords"
-            className="w-full px-4 py-2 rounded-md border border-card-border focus:outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="Enter search terms (e.g., Java, React, Nodejs)"
+            className="w-full"
           />
         </div>
         <div className="flex-1">
-          <input
+          <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+            Location
+          </label>
+          <Input
             type="text"
+            id="location"
             name="location"
-            placeholder="Location"
-            className="w-full px-4 py-2 rounded-md border border-card-border focus:outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="United States"
+            className="w-full"
           />
         </div>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-secondary text-white rounded-md hover:bg-secondary/90 transition-colors flex items-center gap-2"
-        >
-          <Search size={20} />
-          <span>Search</span>
-        </button>
+        <div className="flex items-end">
+          <Button type="submit" variant="secondary" size="lg" className="h-[42px]">
+            Search
+          </Button>
+        </div>
       </div>
     </form>
   );
