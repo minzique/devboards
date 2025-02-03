@@ -18,7 +18,7 @@ class JobModel(Base):
     description = Column(String)
     location = Column(String)
     job_type = Column(String)
-    is_remote = Column(String)
+    is_remote = Column(Integer, default=RemoteType.ONSITE)
     salary_min = Column(Float)
     salary_max = Column(Float)
     salary_currency = Column(String)
@@ -63,7 +63,7 @@ class ArchiveJobModel(Base):
     description = Column(String)
     location = Column(String)
     job_type = Column(String)
-    is_remote = Column(String, default="in-office")
+    is_remote = Column(Integer, default=RemoteType.ONSITE)
     salary_min = Column(Float, nullable=True)
     salary_max = Column(Float, nullable=True)
     salary_currency = Column(String, default="USD")
@@ -81,7 +81,7 @@ def save_jobs_to_db(jobs: list[Job], db: Session):
         try:
             existing_job = db.query(JobModel).filter_by(job_hash=job.job_hash).first()  
             logger.debug(f"Checking job: {job.title}")
-            if existing_job:
+            if (existing_job):
                 logger.debug(f"Job already exists: {job.title}")
                 continue    
         except Exception as e:
