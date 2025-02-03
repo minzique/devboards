@@ -16,9 +16,9 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto">
-      <div className="flex gap-4 p-4 bg-white rounded-lg shadow-sm border border-card-border">
-        <div className="flex-1">
+    <form onSubmit={handleSubmit} className="w-full max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-2 md:gap-4 p-4 bg-white rounded-lg shadow-sm border border-card-border">
+        <div className="w-full">
           <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-1">
             Position, title, keywords
           </label>
@@ -30,7 +30,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
             className="w-full"
           />
         </div>
-        <div className="flex-1">
+        <div className="w-full">
           <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
             Location
           </label>
@@ -38,12 +38,13 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
             type="text"
             id="location"
             name="location"
-            placeholder="United States"
+            placeholder="Location (e.g., San Francisco, CA)"
             className="w-full"
           />
         </div>
-        <div className="flex items-end">
-          <Button type="submit" variant="secondary" size="lg" className="h-[42px]">
+        <div className="w-full md:w-auto">
+          <div className="h-[1.125rem] mb-1 md:block hidden"></div>
+          <Button type="submit" variant="secondary" size="lg" className="w-full md:w-auto h-[42px]">
             Search
           </Button>
         </div>

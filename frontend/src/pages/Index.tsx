@@ -45,10 +45,10 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="container py-8 space-y-6">
-        <SearchBar onSearch={handleSearch} />
+      <main className="container py-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <SearchBar onSearch={handleSearch} />
 
-        <div className="max-w-7xl mx-auto">
           <FilterTags
             selectedFilters={selectedFilters}
             onFilterChange={handleFilterChange}
@@ -57,7 +57,7 @@ const Index = () => {
           {isLoading && <div>Loading jobs...</div>}
           {error && <div>Error loading jobs</div>}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {jobs.map((job) => (
               <JobCard key={job.job_hash} {...job} />
             ))}

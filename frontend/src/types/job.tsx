@@ -8,7 +8,7 @@ export interface Job {
   company_website?: string;
   location: string;
   job_type: "full-time" | "part-time" | "contract" | "internship";
-  is_remote: "remote" | "hybrid" | "in-office";
+  is_remote: RemoteType;
   salary_min?: number;
   salary_max?: number;
   salary_currency: string;
@@ -16,5 +16,12 @@ export interface Job {
   date_posted: string;
   date_fetched: string;
   source: string;
-  logo?: string;
 }
+export enum RemoteType {
+  REMOTE = 0,
+  HYBRID = 1,
+  ONSITE = 2
+}
+export const getCompanyLogo = (company: string): string => {
+  return `/logos/${company.toLowerCase()}.png`;
+};
