@@ -51,23 +51,19 @@ class Job:
     def to_db_model(self, db_session=None) -> 'JobModel':
         """Convert domain model to DB model"""
         from src.models.db.job import JobModel
-        
-        company_id = self.company_id
-        if db_session and not company_id:
+        if db_session:
             company = db_session.query(CompanyModel).filter_by(name=self.company).first()
+            # logger.debug(f"Company: {company}")
             if not company:
                 logger.info(f"Creating new company: {self.company}")
-                new_company = CompanyModel(
-                    name=self.company,
-                    website=self.company_website,
-                    logo_url=self.company_logo,
-                    slug=self.company.lower().replace(" ", "-")
-                )
+                slug = self.company.lower().replace(" ", "-")
+                new_company = CompanyModel(name=self.company, logo_url=f"/logos/{slug}.png", website=self.company_website)
                 db_session.add(new_company)
                 db_session.commit()
-                company_id = new_company.id
-            else:
-                company_id = company.id
+                
+            company_id = company.id if company else None
+        else:
+            company_id = None
 
         return JobModel(
             job_hash=self.job_hash,

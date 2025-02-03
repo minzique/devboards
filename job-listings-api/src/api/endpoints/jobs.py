@@ -1,39 +1,34 @@
-from flask import Blueprint, jsonify, request
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+from src.core.database import get_db
+from src.models.db.job import JobModel
 
-jobs_bp = Blueprint('jobs', __name__)
+router = APIRouter()
 
-# Sample job data
-jobs = [
-    {
-        'id': 1,
-        'title': 'Software Engineer',
-        'description': 'Develop and maintain software applications.',
-        'company': 'Tech Company',
-        'location': 'Remote'
-    },
-    {
-        'id': 2,
-        'title': 'Data Scientist',
-        'description': 'Analyze and interpret complex data.',
-        'company': 'Data Corp',
-        'location': 'On-site'
-    }
-]
 
-@jobs_bp.route('/jobs', methods=['GET'])
-def list_jobs():
-    return jsonify(jobs)
+@router.get("/jobs")
+def list_jobs(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    query: str = Query(None),
+    location: str = Query(None)
+):
+    jobs_query = db.query(JobModel)
+    
+    if query:
+        jobs_query = jobs_query.filter(JobModel.title.ilike(f"%{query}%"))
+    if location:
+        jobs_query = jobs_query.filter(
+            JobModel.location.ilike(f"%{location}%"))
 
-@jobs_bp.route('/jobs', methods=['POST'])
-def create_job():
-    new_job = request.json
-    new_job['id'] = len(jobs) + 1
-    jobs.append(new_job)
-    return jsonify(new_job), 201
+    jobs = jobs_query.offset(skip).limit(limit).all()
+    domain_jobs = []
+    for job in jobs:
+        domain_jobs.append(job.to_domain())
+    return domain_jobs
 
-@jobs_bp.route('/jobs/<int:job_id>', methods=['GET'])
-def get_job(job_id):
-    job = next((job for job in jobs if job['id'] == job_id), None)
-    if job is None:
-        return jsonify({'error': 'Job not found'}), 404
-    return jsonify(job)
+
+@router.get("/jobs/{job_id}")
+def get_job_details(job_id: int, db: Session = Depends(get_db)):
+    return db.query(JobModel).filter(JobModel.id == job_id).first()

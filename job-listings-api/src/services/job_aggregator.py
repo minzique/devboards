@@ -6,9 +6,8 @@ from src.core.database import db_session
 from src.models.db.job import save_jobs_to_db, archive_old_jobs
 from src.core.celery_config import celery
 from src.utils.logger import get_logger
-from src.services.scrapers.codemite_scraper import CodemiteScraper
-from src.services.scrapers.wso2_scraper import WSO2Scraper
-from src.services.scrapers.rootcode_scraper import RootcodeScraper
+from src.services.scrapers import CodemiteScraper, WSO2Scraper, RootcodeScraper, ZebraScraper
+
 logger = get_logger(__name__)
 
 @celery.task
@@ -20,18 +19,20 @@ def run_aggregator(scraper_names=None):
     available_scrapers = {
         'wso2': WSO2Scraper,
         'codemite': CodemiteScraper,
-        'rootcode': RootcodeScraper
+        'rootcode': RootcodeScraper,
+        'zebra': ZebraScraper
     }
     
     scrapers = []
-    if scraper_names:
-        for name in scraper_names:
-            if name in available_scrapers:
-                scrapers.append(available_scrapers[name]())
-    else:
-        scrapers = [scraper() for scraper in available_scrapers.values()]
+
 
     with db_session() as db:
+        if scraper_names:
+            for name in scraper_names:
+                if name in available_scrapers:
+                    scrapers.append(available_scrapers[name]())
+        else:
+            scrapers = [scraper(db) for scraper in available_scrapers.values()]
         all_new_jobs = []
         for scraper in scrapers:
             try:

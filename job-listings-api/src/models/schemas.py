@@ -1,9 +1,9 @@
 from enum import Enum
 
-class RemoteType(str, Enum):
-    REMOTE = "remote"
-    HYBRID = "hybrid"
-    ONSITE = "in-office"
+class RemoteType(int, Enum):
+    REMOTE = 0
+    HYBRID = 1
+    ONSITE = 2
 
 
 class JobType(str, Enum):

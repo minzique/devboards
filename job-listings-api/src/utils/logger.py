@@ -63,7 +63,7 @@ class Logger:
         self.logger.warning(message)
 
     def error(self, message):
-        self.logger.error(message, stack_info=True)
+        self.logger.error(message)
 
     def critical(self, message):
         self.logger.critical(message)

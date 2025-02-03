@@ -9,7 +9,7 @@ class CompanyModel(Base):
     __tablename__ = "companies"
 
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String, index=True)
     slug = Column(String, unique=True, index=True)  # e.g. 'zebra', 'rootcode'
     logo_url = Column(String)

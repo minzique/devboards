@@ -7,6 +7,7 @@ from scrapy import signals
 from src.models.job import Job
 from src.utils.logger import get_logger
 from src.services.scrapers.base_scraper import BaseScraper
+from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
 
@@ -26,7 +27,8 @@ class BaseSpider(Spider):
 class BaseScrapyScraper(BaseScraper):
     """Base class for Scrapy-based scrapers"""
     
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.jobs = []
         self.spider_class: Optional[BaseSpider] = None
         dispatcher.connect(self.collect_results, signal=signals.item_scraped)

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List
 from src.utils.logger import get_logger
 from src.services.scrapers.scrapy_base import BaseScrapyScraper, BaseSpider
+from src.models.schemas import RemoteType
 
 logger = get_logger(__name__)
 
@@ -67,8 +68,8 @@ class WSO2Spider(BaseSpider):
         }
 
 class WSO2Scraper(BaseScrapyScraper):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super(WSO2Scraper, self).__init__(*args, **kwargs)
         self.spider_class = WSO2Spider
 
     def process_listings(self, raw_data) -> List[Job]:
@@ -89,14 +90,18 @@ class WSO2Scraper(BaseScrapyScraper):
                     company=item['company'],
                     location=item['location'],
                     job_type=item['job_type'],
-                    is_remote=item['is_remote'],
+                    is_remote= self._parse_remote_type(item['is_remote']),
                     apply_url=item['apply_url'],
                     date_posted=datetime.fromisoformat(item['date_posted']),
                     source=item['source']
                 )
             )
         return processed_jobs
-
+    def _parse_remote_type(self, is_remote: bool) -> str:
+        """Convert remote status to standard remote type"""
+        if is_remote:
+            return RemoteType.REMOTE
+        return RemoteType.ONSITE
 
 if __name__ == "__main__":
     scraper = WSO2Scraper()

@@ -12,8 +12,8 @@ logger = get_logger(__name__)
 class JobModel(Base):
     __tablename__ = "jobs"
 
-    id = Column(Integer,index=True)
-    job_hash = Column(String, primary_key=True, nullable=False)
+    id = Column(Integer)
+    job_hash = Column(String, nullable=True, primary_key=True)
     title = Column(String, nullable=False)
     description = Column(String)
     location = Column(String)
@@ -36,7 +36,7 @@ class JobModel(Base):
         return Job(
             title=self.title,
             description=self.description,
-            company=self.company.name if self.company else "unknown",
+            company=self.company.name if self.company else "",
             location=self.location,
             job_type=self.job_type,
             is_remote=self.is_remote,
@@ -80,8 +80,9 @@ def save_jobs_to_db(jobs: list[Job], db: Session):
     for job in jobs:
         try:
             existing_job = db.query(JobModel).filter_by(job_hash=job.job_hash).first()  
-            logger.info(f"Checking job: {job.title}")
+            logger.debug(f"Checking job: {job.title}")
             if existing_job:
+                logger.debug(f"Job already exists: {job.title}")
                 continue    
         except Exception as e:
             print(f"Error querying job: {e}")
