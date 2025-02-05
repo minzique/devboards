@@ -69,10 +69,14 @@ export const JobCard = ({
       {/* Bottom content */}
       <div className="mt-auto">
         <div className="space-y-2 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2 border-gray-100">
+          <div className="flex items-center gap-2 mb-2 border-gray-100">
             {logo ? (
               <a href={company_website} target="_blank" rel="noreferrer">
-                <img src={logo} alt={company} className="h-5 rounded" />
+                <img 
+                  src={logo} 
+                  alt={company} 
+                  className="h-[27px] w-auto max-w-[75px] max-h-[27px] object-contain rounded" 
+                />
               </a>
             ) : (
               <div className="w-5 h-5 bg-gray-100 rounded flex items-center justify-center">
