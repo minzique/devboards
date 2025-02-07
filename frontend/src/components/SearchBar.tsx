@@ -17,7 +17,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row gap-2 md:gap-4 p-4 bg-white rounded-lg shadow-sm border border-card-border">
+      <div className="flex flex-col md:flex-row gap-2 md:gap-4 p-2 pb-0 bg-white rounded-lg shadow-sm border-card-border">
         <div className="w-full">
           <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-1">
             Position, title, keywords

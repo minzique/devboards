@@ -2,7 +2,7 @@ import { Job, RemoteType } from "@/types/job";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-import { useAppliedJobs } from "@/hooks/useAppliedJobs";
+import { useAppliedJobs } from "@/contexts/AppliedJobsContext"; // Update import path
 
 const getRemoteTypeLabel = (type: number): string => {
   switch (Number(type)) {  // I didn't know TS was so strict about this
@@ -18,31 +18,18 @@ const getRemoteTypeLabel = (type: number): string => {
   }
 };
 
-export const JobCard = ({
-  job_hash,
-  title,
-  company,
-  location,
-  salary_min,
-  salary_max,
-  date_posted,
-  apply_url,
-  job_type,
-  is_remote,
-  company_logo,
-  company_website,
-}: Job) => {
-  const { appliedJobs, toggleApplied } = useAppliedJobs();
+export const JobCard = ({ job_hash, ...props }: Job) => {
+  const { appliedJobs, toggleApplied, debug } = useAppliedJobs();
   const isApplied = appliedJobs.has(job_hash);
-  const formattedDate = formatDistanceToNow(new Date(date_posted), {
+  const formattedDate = formatDistanceToNow(new Date(props.date_posted), {
     addSuffix: true,
   });
   const salary =
-    salary_min && salary_max ? `$${salary_min}K - $${salary_max}K` : null;
+    props.salary_min && props.salary_max ? `$${props.salary_min}K - $${props.salary_max}K` : null;
 
   let logo = null;
-  if (company_logo)
-    logo = `/logos/${company.toLowerCase()}.png`;
+  if (props.company_logo)
+    logo = `/logos/${props.company.toLowerCase()}.png`;
   
   
   return (
@@ -50,19 +37,23 @@ export const JobCard = ({
       {/* Top content */}
       <div>
         <div className="flex justify-between items-start mb-4">
-          <span className="text-sm text-blue-600">{formattedDate}</span>
+          
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+            {formattedDate}
+          </Badge>
+          {/* <span className="text-sm text-blue-600">{formattedDate}</span> */}
 
-          {is_remote && (
+          {props.is_remote && (
             <Badge
               variant="secondary"
               className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
             >
-              {getRemoteTypeLabel(is_remote)}
+              {getRemoteTypeLabel(props.is_remote)}
             </Badge>
           )}
         </div>
 
-        <h3 className="font-semibold text-lg text-gray-900 mb-4">{title}</h3>
+        <h3 className="font-semibold text-lg text-gray-900 mb-4">{props.title}</h3>
         {/* <div className="flex items-center border-b ">  </div> */}
       </div>
 
@@ -71,26 +62,26 @@ export const JobCard = ({
         <div className="space-y-2 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2 mb-2 border-gray-100">
             {logo ? (
-              <a href={company_website} target="_blank" rel="noreferrer">
+              <a href={props.company_website} target="_blank" rel="noreferrer">
                 <img 
                   src={logo} 
-                  alt={company} 
+                  alt={props.company} 
                   className="h-[27px] w-auto max-w-[75px] max-h-[27px] object-contain rounded" 
                 />
               </a>
             ) : (
               <div className="w-5 h-5 bg-gray-100 rounded flex items-center justify-center">
-                <span className="text-xs font-medium">{company[0]}</span>
+                <span className="text-xs font-medium">{props.company[0]}</span>
               </div>
             )}
             <span className="text-sm text-gray-800">
               {logo ? "- " : ""}
-              {company}
+              {props.company}
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>📍 {location}</span>
+            <span>📍 {props.location}</span>
           </div>
           {salary && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -98,7 +89,7 @@ export const JobCard = ({
             </div>
           )}
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>⏰ {job_type}</span>
+            <span>⏰ {props.job_type}</span>
           </div>
         </div>
 
@@ -106,7 +97,7 @@ export const JobCard = ({
           <Button
             variant="secondary"
             className="w-full"
-            onClick={() => window.open(apply_url, "_blank")}
+            onClick={() => window.open(props.apply_url, "_blank")}
           >
             Details
           </Button>
@@ -117,7 +108,11 @@ export const JobCard = ({
                 ? "bg-yellow-400 hover:bg-yellow-500"
                 : "hover:bg-yellow-500 hover:text-white"
             }`}
-            onClick={() => toggleApplied(job_hash)}
+            onClick={() => {
+              toggleApplied(job_hash);
+              // Debug current state after toggle
+              setTimeout(debug, 0);
+            }}
           >
             {isApplied ? "Applied ✓" : "Mark Applied"}
           </Button>
