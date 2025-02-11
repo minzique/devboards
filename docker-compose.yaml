@@ -10,6 +10,7 @@ services:
     build: ./job-listings-api
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - CORS_ORIGINS=https://${DOMAIN}
       - SCRAPER_SCHEDULE=*/60  # Run scraper every 60 minutes
     depends_on:
       db:
@@ -40,13 +41,16 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile.template  # Note the .template extension
+      - ./docker-entrypoint.sh:/docker-entrypoint.sh
     environment:
       - DOMAIN
       - API_DOMAIN=api.${DOMAIN}
     networks:
       - app-network
     restart: unless-stopped  # Add restart policy for reliability
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
 volumes:
   postgres_data:

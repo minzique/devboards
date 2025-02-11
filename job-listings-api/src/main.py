@@ -1,18 +1,19 @@
 from fastapi import FastAPI
 from src.api.endpoints import jobs
 from fastapi.middleware.cors import CORSMiddleware
+from src.core.config import Config
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost", "http://localhost:8080"],
+    allow_origins=Config.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-app.include_router(jobs.router)
+app.include_router(jobs.router, prefix="/v1")
 
 @app.get("/")
 def read_root():
@@ -20,4 +21,4 @@ def read_root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=Config.API_HOST, port=Config.API_PORT)
