@@ -1,0 +1,29 @@
+{
+    email admin@${DOMAIN}
+    auto_https on
+    # Staging let's encrypt for testing
+    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+${DOMAIN} {
+    encode gzip
+    header {
+        # Enable HTTP Strict Transport Security (HSTS)
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent browsers from detecting the mimetype if not sent by the server.
+        X-Content-Type-Options "nosniff"
+        # Disable iframe usage
+        X-Frame-Options "DENY"
+    }
+    reverse_proxy frontend:80
+}
+
+api.${DOMAIN} {
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+    reverse_proxy api:8000
+}

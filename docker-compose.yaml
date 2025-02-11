@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   frontend:
     build: ./frontend
@@ -38,22 +36,17 @@ services:
   caddy:
     image: caddy:latest
     ports:
-      - "80:80"
-      - "443:443"
+      - "443:443"  # Only expose HTTPS port
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - ./Caddyfile:/etc/caddy/Caddyfile
     environment:
       - DOMAIN
       - API_DOMAIN=api.${DOMAIN}
-    command: |
-      caddy reverse-proxy \
-        --from $$DOMAIN \
-        --to frontend:80 \
-        --from $$API_DOMAIN \
-        --to api:8000
     networks:
       - app-network
+    restart: unless-stopped  # Add restart policy for reliability
 
 volumes:
   postgres_data:
