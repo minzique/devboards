@@ -1,126 +1,64 @@
 version: '3.8'
 
 services:
-  nginx-proxy:
-    image: nginxproxy/nginx-proxy
+  frontend:
+    build: ./frontend
+    environment:
+      - VITE_API_URL=https://api.${DOMAIN}
+    networks:
+      - app-network
+
+  api:
+    build: ./job-listings-api
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - SCRAPER_SCHEDULE=*/60  # Run scraper every 60 minutes
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  caddy:
+    image: caddy:latest
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - certs:/etc/nginx/certs
-      - vhost:/etc/nginx/vhost.d
-      - html:/usr/share/nginx/html
-    restart: always
-
-  acme-companion:
-    image: nginxproxy/acme-companion
+      - caddy_data:/data
+      - caddy_config:/config
     environment:
-      - DEFAULT_EMAIL=hello@minzique.net
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - certs:/etc/nginx/certs
-      - vhost:/etc/nginx/vhost.d
-      - html:/usr/share/nginx/html
-      - acme:/etc/acme.sh
-    depends_on:
-      - nginx-proxy
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-      - VIRTUAL_HOST=jobcafe.lk
-      - VIRTUAL_PORT=3000
-      - LETSENCRYPT_HOST=jobcafe.lk
-    expose:
-      - "3000"
-    depends_on:
-      - api
-    volumes:
-      - logos:/app/public/logos:ro
-
-  api:
-    build:
-      context: ./job-listings-api
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobs
-      - REDIS_URL=redis://redis:6379/0
-      - DEBUG=False
-      - VIRTUAL_HOST=api.your-domain.com
-      - VIRTUAL_PORT=8000
-      - LETSENCRYPT_HOST=api.your-domain.com
-    expose:
-      - "8000"
-    depends_on:
-      - db
-      - redis
-    restart: always
-    volumes:
-      - logos:/app/static/logos:ro
-
-  scraper:
-    build:
-      context: ./job-listings-api
-      dockerfile: Dockerfile.scraper
-    command: celery -A src.services.tasks worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobs
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - db
-      - redis
-    restart: always
-
-  scheduler:
-    build:
-      context: ./job-listings-api
-      dockerfile: Dockerfile.scraper
-    command: celery -A src.services.tasks beat --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobs
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-    restart: always
-
-  db:
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=jobs
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-  logos:
-    image: alpine
-    volumes:
-      - logos:/logos
-    command: sh -c "while true; do sleep 86400; done"  # Keeps container alive
-    restart: always
+      - DOMAIN
+      - API_DOMAIN=api.${DOMAIN}
+    command: |
+      caddy reverse-proxy \
+        --from $$DOMAIN \
+        --to frontend:80 \
+        --from $$API_DOMAIN \
+        --to api:8000
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
-  redis_data:
-  certs:
-  vhost:
-  html:
-  acme:
-  logos:
+  caddy_data:
+  caddy_config:
+
+networks:
+  app-network:
