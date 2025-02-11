@@ -16,7 +16,7 @@ services:
   acme-companion:
     image: nginxproxy/acme-companion
     environment:
-      - DEFAULT_EMAIL=hello@minzique.net
+      - DEFAULT_EMAIL=${ACME_EMAIL}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - certs:/etc/nginx/certs
@@ -31,14 +31,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     environment:
-      - VITE_API_URL=http://localhost:8000
-      - VIRTUAL_HOST=jobcafe.lk
-      - VIRTUAL_PORT=3000
-      - LETSENCRYPT_HOST=jobcafe.lk
+      - VITE_API_URL=${VITE_API_URL}
+      - VIRTUAL_HOST=${FRONTEND_DOMAIN}
+      - VIRTUAL_PORT=${FRONTEND_PORT}
+      - LETSENCRYPT_HOST=${FRONTEND_DOMAIN}
     expose:
-      - "3000"
+      - "${FRONTEND_PORT}"
     depends_on:
       - api
     volumes:
@@ -49,22 +49,22 @@ services:
       context: ./job-listings-api
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "${API_PORT}:${API_PORT}"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobs
-      - REDIS_URL=redis://redis:6379/0
-      - DEBUG=False
-      - VIRTUAL_HOST=api.your-domain.com
-      - VIRTUAL_PORT=8000
-      - LETSENCRYPT_HOST=api.your-domain.com
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - DEBUG=${DEBUG}
+      - VIRTUAL_HOST=${API_DOMAIN}
+      - VIRTUAL_PORT=${API_PORT}
+      - LETSENCRYPT_HOST=${API_DOMAIN}
     expose:
-      - "8000"
+      - "${API_PORT}"
     depends_on:
       - db
       - redis
     restart: always
-    volumes:
-      - logos:/app/static/logos:ro
+    # volumes:
+    #   - logos:/app/static/logos:ro
 
   scraper:
     build:
@@ -72,8 +72,8 @@ services:
       dockerfile: Dockerfile.scraper
     command: celery -A src.services.tasks worker --loglevel=info
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobs
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
     depends_on:
       - db
       - redis
@@ -85,8 +85,8 @@ services:
       dockerfile: Dockerfile.scraper
     command: celery -A src.services.tasks beat --loglevel=info
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobs
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
     depends_on:
       - redis
     restart: always
@@ -94,27 +94,27 @@ services:
   db:
     image: postgres:15-alpine
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=jobs
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - redis_data:/data
 
-  logos:
-    image: alpine
-    volumes:
-      - logos:/logos
-    command: sh -c "while true; do sleep 86400; done"  # Keeps container alive
-    restart: always
+  # logos:
+  #   image: alpine
+  #   volumes:
+  #     - logos:/logos
+  #   command: sh -c "while true; do sleep 86400; done"  # Keeps container alive
+  #   restart: always
 
 volumes:
   postgres_data:
@@ -123,4 +123,4 @@ volumes:
   vhost:
   html:
   acme:
-  logos:
+  # logos:

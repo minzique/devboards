@@ -43,7 +43,7 @@ const AppliedJobs = () => {
     <div className="px-2 min-h-screen bg-background">
       <header className="border-b border-card-border">
         <div className="container py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-secondary">Applied Jobs</h1>
+          <h1 className="text-2xl font-bold text-secondary">Job-Cafe</h1>
           <Link
             to="/"
             className="bg-lime-400 px-3 py-2 text-sm rounded-md hover:bg-lime-500"
