@@ -1,0 +1,28 @@
+{
+    email hello@minzique.net
+}
+
+${DOMAIN} {
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+    reverse_proxy frontend:80
+}
+
+${API_DOMAIN} {
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        # Add CORS headers
+        Access-Control-Allow-Origin "https://${DOMAIN}"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
+        Access-Control-Allow-Credentials "true"
+    }
+    reverse_proxy api:8000
+}
