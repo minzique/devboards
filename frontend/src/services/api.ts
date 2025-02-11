@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Job } from "../types/job";
 
-const API_URL = import.meta.env.VITE_API_URL || new URL("api." + window.location.href);
+const API_URL = import.meta.env.VITE_API_URL || `https://api.${window.location.host}`;
 
 export const jobsApi = {
   getJobs: async (query?: string, location?: string) => {
