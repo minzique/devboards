@@ -1,11 +1,12 @@
 {
     email admin@${DOMAIN}
-    auto_https on
-    # Staging let's encrypt for testing
+    # Comment out staging CA during testing if needed
     # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
 ${DOMAIN} {
+    # Force HTTPS
+    redir / https://{host}{uri} permanent
     encode gzip
     header {
         # Enable HTTP Strict Transport Security (HSTS)
@@ -19,6 +20,8 @@ ${DOMAIN} {
 }
 
 api.${DOMAIN} {
+    # Force HTTPS
+    redir / https://{host}{uri} permanent
     encode gzip
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
