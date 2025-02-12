@@ -1,28 +1,59 @@
 {
     email hello@minzique.net
+    # Uncomment during testing
+    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
 ${DOMAIN} {
     encode gzip
     header {
+        # Security headers
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # CSP header - adjust according to your needs
+        Content-Security-Policy "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.jobcafe.lk"
     }
+    
+    # Handle errors
+    handle_errors {
+        respond "{http.error.status_code} {http.error.status_text}"
+    }
+
     reverse_proxy frontend:80
 }
 
 ${API_DOMAIN} {
     encode gzip
     header {
+        # Security headers
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
-        # Add CORS headers
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        
+        # CORS headers
         Access-Control-Allow-Origin "https://${DOMAIN}"
         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
         Access-Control-Allow-Credentials "true"
     }
+
+    # Handle CORS preflight requests
+    @options {
+        method OPTIONS
+    }
+    handle @options {
+        respond 204
+    }
+
+    # Handle errors
+    handle_errors {
+        respond "{http.error.status_code} {http.error.status_text}"
+    }
+
     reverse_proxy api:8000
 }

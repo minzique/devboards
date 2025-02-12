@@ -43,7 +43,7 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-      - ./Caddyfile:/etc/caddy/Caddyfile.template  # Note the .template extension
+      - ./Caddyfile.template:/etc/caddy/Caddyfile.template  # Note the .template extension
       - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro,Z
     environment:
       - DOMAIN
