@@ -1,66 +1,77 @@
+from hashlib import md5
 from src.models.job import Job
-from scrapy import Spider, Request
 from datetime import datetime
 from typing import List
+import re
 from src.utils.logger import get_logger
-from src.services.scrapers.scrapy_base import BaseScrapyScraper, BaseSpider
+from src.services.scrapers.bs4_base import BaseBS4Scraper
 from src.models.schemas import RemoteType
 
 logger = get_logger(__name__)
 
-class NinetyNineXSpider(BaseSpider):
-    name = '99x'
-    allowed_domains = ['careers-page.com']
-    start_urls = ['https://www.careers-page.com/99x-3']
-    
-    def parse(self, response):
-        # Parse each job listing from the main page, excluding template sections
-        for job in response.css('template[v-else-if="jobs && jobs.length == 0"] li.media'):
-            title = job.css('h5.primary-color::text').get()
-            if not title or title == '[[ job.position_name ]]':  # Skip template elements
+class NinetyNineXScraper(BaseBS4Scraper):
+    BASE_URL = 'https://www.careers-page.com/99x-3'
+
+    def scrape_listings(self) -> List[Job]:
+        soup = self.get_soup(self.BASE_URL)
+        if not soup:
+            return []
+            
+        raw_jobs = []
+        # Use the template that contains actual jobs (v-else-if="jobs && jobs.length == 0")
+        for job in soup.select('template[v-else-if="jobs && jobs.length == 0"] li.media'):
+            # Get job details
+            
+            title = job.select_one('h5.mt-0.mb-1.primary-color').string.strip()
+            if not title or '[[ job.position_name ]]' in title:
                 continue
                 
-            location = job.css('span.fas.fa-map-marker-alt').xpath('following-sibling::text()').get()
-            url = response.urljoin(job.css('div.media-body a::attr(href)').get())
-            
-            if not url:
+            # Get job URL
+            url_elem = job.select_one('div.media-body a')
+            if not url_elem:
                 continue
-
-            job_data = {
-                'title': title.strip(),
-                'location': location.strip() if location else "Not specified",
-                'url': url
-            }
+                
+            url = url_elem.get('href')
+            if not url.startswith('http'):
+                url = f"https://www.careers-page.com{url}"
+                
+            # Get location
+            location_span = job.select_one('span.text-secondary span[style="margin-right: 10px;"]')
+            location = location_span.text.strip() if location_span else "Not specified"
             
-            yield Request(
-                url=job_data['url'],
-                callback=self.parse_job_details,
-                cb_kwargs={'job': job_data},
-                errback=self.handle_error
-            )
+            # Get job details page
+            job_details = self.get_soup(url)
+            if not job_details:
+                continue
+                
+            description = job_details.select_one('meta[property="og:description"]')
+            description_text = description['content'] if description else "No description available"
+            
+            # Determine remote status from description
+            description_lower = description_text.lower()
+            remote_indicators = ['remote', 'work from home', 'wfh']
+            hybrid_indicators = ['hybrid', 'flexible']
+            
+            if any(indicator in description_lower for indicator in remote_indicators):
+                remote_type = RemoteType.REMOTE
+            elif any(indicator in description_lower for indicator in hybrid_indicators):
+                remote_type = RemoteType.HYBRID
+            else:
+                remote_type = RemoteType.ONSITE
 
-    def parse_job_details(self, response, job):
-        description = response.css('meta[property="og:description"]::attr(content)').get()
-        
-        remote_indicators = ['remote', 'work from home', 'wfh']
-        is_remote = any(indicator in description.lower() for indicator in remote_indicators) if description else False
-
-        yield {
-            'title': job['title'],
-            'description': description or "No description available",
-            'company': '99x',
-            'location': job['location'],
-            'job_type': 'Full Time',  # Default as site doesn't specify
-            'is_remote': is_remote,
-            'apply_url': job['url'],
-            'date_posted': datetime.now().isoformat(),
-            'source': '99x Careers'
-        }
-
-class NinetyNineXScraper(BaseScrapyScraper):
-    def __init__(self, *args, **kwargs):
-        super(NinetyNineXScraper, self).__init__(*args, **kwargs)
-        self.spider_class = NinetyNineXSpider
+            raw_jobs.append({
+                'title': title,
+                'description': description_text,
+                'company': '99x',
+                'location': location,
+                'job_type': 'Full Time',
+                'remote_type': remote_type,
+                'apply_url': url,
+                'date_posted': datetime.now().isoformat(),
+                'source': '99x Careers'
+            })
+            
+        return self.process_listings(raw_jobs)
 
     def process_listings(self, raw_data) -> List[Job]:
         processed_jobs = []
@@ -83,16 +94,22 @@ class NinetyNineXScraper(BaseScrapyScraper):
                     company=item['company'],
                     location=item['location'],
                     job_type=item['job_type'],
-                    is_remote=self._parse_remote_type(item['is_remote']),
+                    is_remote=item['remote_type'],
                     apply_url=item['apply_url'],
                     date_posted=datetime.fromisoformat(item['date_posted']),
                     source=item['source']
                 )
             )
         return processed_jobs
+    
+    def generate_job_hash(self, job_data):
+        hash_string = (
+            f"{job_data.get('title', '')}"
+            f"{job_data.get('apply_url', '')}"
+            
+        )
+        return md5(hash_string.encode()).hexdigest()
 
-    def _parse_remote_type(self, is_remote: bool) -> str:
-        return RemoteType.REMOTE if is_remote else RemoteType.ONSITE
 
 if __name__ == "__main__":
     scraper = NinetyNineXScraper()
