@@ -1,0 +1,7 @@
+FROM caddy:latest
+
+# Install gettext package for envsubst
+RUN apk add --no-cache gettext
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
