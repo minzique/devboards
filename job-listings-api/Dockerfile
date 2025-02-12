@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
+# Install supervisor
+RUN apt-get update && apt-get install -y supervisor
+
 # Install Poetry
 RUN pip install poetry
 
@@ -18,6 +21,9 @@ RUN poetry config virtualenvs.create false && \
 
 # Copy scraper scripts
 COPY . .
+
+# Copy supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Healthcheck and startup script
 COPY start.sh .
