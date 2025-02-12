@@ -5,7 +5,7 @@ from src.services.scrapers.zebra_scraper import ZebraScraper
 from src.services.scrapers.ninetyninex_scraper import NinetyNineXScraper
 from src.services.scrapers.ascentic_scraper import AscenticScraper
 from src.services.scrapers.ifs_scraper import IFSScraper
-
+from src.services.scrapers.scrapy_base import BaseScrapyScraper
 __all__ = [
     'WSO2Scraper',
     'CodemiteScraper', 
@@ -13,5 +13,6 @@ __all__ = [
     'ZebraScraper',
     'NinetyNineXScraper',
     'AscenticScraper',
-    'IFSScraper'
+    'IFSScraper',
+    'BaseScrapyScraper'
 ]
