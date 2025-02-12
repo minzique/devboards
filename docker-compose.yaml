@@ -35,22 +35,22 @@ services:
       - app-network
 
   caddy:
-    image: caddy:latest
+    build: 
+      context: .
+      dockerfile: Dockerfile.caddy
     ports:
       - "443:443"  # Only expose HTTPS port
     volumes:
       - caddy_data:/data
       - caddy_config:/config
       - ./Caddyfile:/etc/caddy/Caddyfile.template  # Note the .template extension
-      - ./docker-entrypoint.sh:/docker-entrypoint.sh
+      - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro,Z
     environment:
       - DOMAIN
       - API_DOMAIN=api.${DOMAIN}
     networks:
       - app-network
     restart: unless-stopped  # Add restart policy for reliability
-    entrypoint: ["/docker-entrypoint.sh"]
-    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
 volumes:
   postgres_data:
