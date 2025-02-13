@@ -17,6 +17,8 @@ celery = "^5.4.0"
 uvicorn = "^0.34.0"
 redis = "^5.2.1"
 psycopg2 = "^2.9.10"
+bs4 = "^0.0.2"
+crochet = "^2.1.1"
 
 
 [build-system]
