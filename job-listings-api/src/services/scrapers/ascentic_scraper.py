@@ -1,81 +1,68 @@
-from src.models.job import Job
-from scrapy import Spider, Request
 from datetime import datetime
 from typing import List
 import json
 from src.utils.logger import get_logger
-from src.services.scrapers.scrapy_base import BaseScrapyScraper, BaseSpider
+from src.services.scrapers.bs4_base import BaseBS4Scraper
 from src.models.schemas import RemoteType, JobType
+from src.models.job import Job
 import html
 
 logger = get_logger(__name__)
 
-class AscenticSpider(BaseSpider):
-    name = 'ascentic'
-    allowed_domains = ['career.ascentic.se']
-    start_urls = ['https://career.ascentic.se/jobs']
+class AscenticScraper(BaseBS4Scraper):
+    BASE_URL = 'https://career.ascentic.se/jobs'
 
-    def parse(self, response):
-        for job in response.css('#jobs_list_container li'):
-            title = job.css('.company-link-style::text').get()
-            url = job.css('a::attr(href)').get()
-            department = job.css('span span:first-child::text').get()
-            location = job.css('span span:nth-child(3)::text').get()
-            remote_text = job.css('span.inline-flex::text').get()
+    def scrape_listings(self) -> List[Job]:
+        soup = self.get_soup(self.BASE_URL)
+        if not soup:
+            return []
+            
+        raw_jobs = []
+        for job in soup.select('#jobs_list_container li'):
+            title = job.select_one('.company-link-style')
+            url = job.select_one('a')['href']
+            department = job.select('span span')[0] if job.select('span span') else None
+            location = job.select('span span')[2] if len(job.select('span span')) > 2 else None
+            remote_text = job.select_one('span.inline-flex')
 
-            if not url:
+            if not url or not title:
                 continue
 
-            job_data = {
-                'title': title.strip() if title else None,
-                'department': department.strip() if department else None,
-                'location': location.strip() if location else None,
-                'remote_text': remote_text.strip() if remote_text else None,
-                'url': url
-            }
+            job_details = self.get_soup(url)
+            if not job_details:
+                continue
+            logger.debug(f"Processing job: {title.text} - {url}")
+            # logger.debug(f"Job details: {job_details}")
+            script = job_details.select_one('script[type="application/ld+json"]').string
+            if not script:
+                continue
 
-            yield Request(
-                url=job_data['url'],
-                callback=self.parse_job_details,
-                cb_kwargs={'job': job_data},
-                errback=self.handle_error
-            )
+            try:
+                job_data = json.loads(script.strip().replace('\n', ''))
+                description = html.unescape(job_data.get('description', ''))
+                date_posted = datetime.fromisoformat(job_data.get('datePosted', ''))
+                
+                remote_text_value = remote_text.text.strip() if remote_text else ''
+                remote_status = RemoteType.HYBRID if 'hybrid' in remote_text_value.lower() else RemoteType.ONSITE
 
-    def parse_job_details(self, response, job):
-        # Extract JSON-LD data from script tag
-        script = response.css('script[type="application/ld+json"]::text').get().replace('\n', '')
-        if not script:
-            return None
-
-        try:
-
-            job_data = json.loads(script)
-            description = html.unescape(job_data.get('description', ''))
-            date_posted = datetime.fromisoformat(job_data.get('datePosted', ''))
+                raw_jobs.append({
+                    'title': job_data.get('title'),
+                    'description': description,
+                    'company': job_data.get('hiringOrganization', {}).get('name', 'Ascentic'),
+                    'location': 'Colombo, Sri Lanka',
+                    'job_type': JobType.FULL_TIME,
+                    'is_remote': remote_status,
+                    'apply_url': url,
+                    'date_posted': date_posted,
+                    'source': 'Ascentic Careers',
+                    'company_logo': job_data.get('hiringOrganization', {}).get('logo'),
+                    'company_website': job_data.get('hiringOrganization', {}).get('sameAs')
+                })
+            except (json.JSONDecodeError, AttributeError) as e:
+                logger.error(f"Error parsing job details: {e}")
+                raise e
             
-            remote_status = RemoteType.HYBRID if job['remote_text'] and 'hybrid' in job['remote_text'].lower() else RemoteType.ONSITE
-
-            yield {
-                'title': job_data.get('title'),
-                'description': description,
-                'company': job_data.get('hiringOrganization', {}).get('name', 'Ascentic'),
-                'location': 'Colombo, Sri Lanka',
-                'job_type': JobType.FULL_TIME,
-                'is_remote': remote_status,
-                'apply_url': job['url'],
-                'date_posted': date_posted,
-                'source': 'Ascentic Careers',
-                'company_logo': job_data.get('hiringOrganization', {}).get('logo'),
-                'company_website': job_data.get('hiringOrganization', {}).get('sameAs')
-            }
-        except json.JSONDecodeError as e:
-            logger.error(f"Error parsing job details JSON: {e}")
-            return None
-
-class AscenticScraper(BaseScrapyScraper):
-    def __init__(self, *args, **kwargs):
-        super(AscenticScraper, self).__init__(*args, **kwargs)
-        self.spider_class = AscenticSpider
+        return self.process_listings(raw_jobs)
 
     def process_listings(self, raw_data) -> List[Job]:
         processed_jobs = []
@@ -84,7 +71,7 @@ class AscenticScraper(BaseScrapyScraper):
         for item in raw_data:
             job_hash = self.generate_job_hash(item)
             logger.debug(f"Generated hash: {job_hash}")
-
+            logger.debug(f"Job data: {item}")
             if job_hash in seen_hashes:
                 logger.debug(f"Skipping duplicate job: {item['title']} - {item['apply_url']}")
                 continue
