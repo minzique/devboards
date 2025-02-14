@@ -10,7 +10,7 @@ import json
 logger = get_logger(__name__)
 
 
-class CodemiteScraper(BaseScraper):
+class CodimiteScraper(BaseScraper):
     BASE_URL = "https://codimitepvt.bamboohr.com/careers/"
     requests_helper = RequestsHelper()
     
@@ -53,7 +53,7 @@ class CodemiteScraper(BaseScraper):
                     title=job_details['jobOpening']['jobOpeningName'],
                     description=job_details['jobOpening']['description'],
                     location=f"{job_details['jobOpening']['location']['city']}, {job_details['jobOpening']['location']['state']}, {job_details['jobOpening']['location']['addressCountry']}",
-                    company="Codemite",
+                    company="Codimite",
                     job_type=job_details['jobOpening']['employmentStatusLabel'],
                     is_remote=remote_status,
                     apply_url=job_details['jobOpening']['jobOpeningShareUrl'],
@@ -65,7 +65,7 @@ class CodemiteScraper(BaseScraper):
         return processed_job_list
 
 if __name__ == "__main__":
-    scraper = CodemiteScraper()
+    scraper = CodimiteScraper()
     jobs = scraper.scrape_listings()
     for job in jobs:
         print(job.pretty_print())

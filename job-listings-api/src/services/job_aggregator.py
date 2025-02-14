@@ -6,7 +6,7 @@ from src.core.database import db_session
 from src.models.db.job import save_jobs_to_db, archive_old_jobs
 from src.core.celery_config import celery
 from src.utils.logger import get_logger
-from src.services.scrapers import CodemiteScraper, WSO2Scraper, RootcodeScraper, ZebraScraper, NinetyNineXScraper, AscenticScraper, IFSScraper
+from src.services.scrapers import CodimiteScraper, WSO2Scraper, RootcodeScraper, ZebraScraper, NinetyNineXScraper, AscenticScraper, IFSScraper
 
 logger = get_logger(__name__)
 
@@ -18,7 +18,7 @@ def run_aggregator(scraper_names=None):
     """Run aggregator directly for testing"""
     available_scrapers = {
         'wso2': WSO2Scraper,
-        'codemite': CodemiteScraper,
+        'codimite': CodimiteScraper,
         'rootcode': RootcodeScraper,
         'zebra': ZebraScraper,
         '99x': NinetyNineXScraper,
