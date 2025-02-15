@@ -13,12 +13,14 @@ celery.conf.update(
     task_serializer='json',
     accept_content=['json'],
     result_serializer='json',
+    beat_initial_task_count=1,  # Run immediately on startup
+    beat_sync_every=0,
     timezone='UTC',
     enable_utc=True,
 )
 celery.conf.beat_schedule = {
     "scrape_jobs_every_hour": {
-        "task": "tasks.aggregate_jobs",
+        "task": "src.tasks.aggregate_jobs",
         "schedule": crontab(minute=0, hour="*"),  # Runs every hour
     },
 }

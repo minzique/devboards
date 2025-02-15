@@ -10,9 +10,6 @@ from src.services.scrapers import CodimiteScraper, WSO2Scraper, RootcodeScraper,
 
 logger = get_logger(__name__)
 
-@celery.task
-def aggregate_jobs():
-    run_aggregator()
 
 def run_aggregator(scraper_names=None):
     """Run aggregator directly for testing"""
