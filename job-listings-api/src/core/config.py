@@ -9,6 +9,6 @@ class Config:
     DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
     PAGE_SIZE = int(os.getenv('PAGE_SIZE', '20'))
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-    API_PORT = int(os.getenv('API_PORT', '8000'))
+    API_PORT = int(os.getenv('PORT', '8001'))
     API_HOST = os.getenv('API_HOST', '0.0.0.0')
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:8080,http://localhost').split(',')

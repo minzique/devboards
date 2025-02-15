@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 from src.core.database import get_db
 from src.models.db.job import JobModel
 
@@ -14,7 +15,7 @@ def list_jobs(
     query: str = Query(None),
     location: str = Query(None)
 ):
-    jobs_query = db.query(JobModel)
+    jobs_query = db.query(JobModel).order_by(desc(JobModel.date_posted))
     
     if query:
         jobs_query = jobs_query.filter(JobModel.title.ilike(f"%{query}%"))
