@@ -74,10 +74,10 @@ export const JobCard = ({ job_hash, ...props }: Job) => {
                 <span className="text-xs font-medium">{props.company[0]}</span>
               </div>
             )}
-            <span className="text-sm text-gray-800">
+            {/* <span className="text-sm text-gray-800">
               {logo ? "- " : ""}
               {props.company}
-            </span>
+            </span> */}
           </div>
 
           <div className="flex items-center gap-2 text-sm text-gray-600">

@@ -7,7 +7,7 @@ import { jobsApi } from "@/services/api";
 import type { Job } from "@/types/job";
 import { Link } from "react-router-dom";
 
-const Index = () => {
+const Jobs = () => {
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
@@ -72,4 +72,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Jobs;
