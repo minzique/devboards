@@ -2,8 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies for scraper
+# Install system dependencies including PostgreSQL
 RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    postgresql-client \
     curl \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
